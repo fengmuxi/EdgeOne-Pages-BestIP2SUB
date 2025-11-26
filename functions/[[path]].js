@@ -32,7 +32,7 @@ let FileName = '优选订阅生成器';
 let SUBUpdateTime = 6;
 let total = 24;
 let timestamp = 4102329600000;
-const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[.*\]):?(\d+)?#?(.*)?$/;
+const regex = /^((?:\d{1,3}\.){3}\d{1,3}|\[[^\]]+\]|[a-zA-Z0-9.-]+):?(\d{1,5})?#?(.*?)(?:[#](.*))?$/;
 let fakeUserID;
 let fakeHostName;
 let httpsPorts = ["2053", "2083", "2087", "2096", "8443"];
@@ -46,7 +46,8 @@ let 网络备案 = `<a href='https://t.me/CMLiussss'>萌ICP备-20240707号</a>`;
 let 额外ID = '0';
 let 加密方式 = 'auto';
 let 网站图标, 网站头像, 网站背景, xhttp = '';
-async function 整理优选列表(api) {
+let userInfoUrl = '3xui.api.dwzynj.top';
+async function 整理优选列表(api, hostName, subscription) {
 	if (!api || api.length === 0) return [];
 
 	let newapi = "";
@@ -65,7 +66,7 @@ async function 整理优选列表(api) {
 			method: 'get',
 			headers: {
 				'Accept': 'text/html,application/xhtml+xml,application/xml;',
-				'User-Agent': FileName + ' cmliu/EdgeOne-Pages-BestIP2SUB' // 设置User-Agent头，标识请求来源
+				'User-Agent': encodeURIComponent(FileName) + ' cmliu/EdgeOne-Pages-BestIP2SUB' // 设置User-Agent头，标识请求来源
 			},
 			signal: controller.signal // 将AbortController的信号量添加到fetch请求中，以便于需要时可以取消请求
 		}).then(response => response.ok ? response.text() : Promise.reject())));
@@ -124,10 +125,52 @@ async function 整理优选列表(api) {
 		clearTimeout(timeout);
 	}
 
-	const newAddressesapi = await 整理(newapi);
+	const userInfo = await 获取用户信息(hostName, subscription);
+	const newAddressesapi = await 整理((userInfo + newapi);
 
 	// 返回处理后的结果
 	return newAddressesapi;
+}
+
+async function 获取用户信息(hostName, subscription) {
+	if (!subscription || subscription.length === 0) return [];
+	let apiUrl = `https://${hostName}/json/${subscription}`;
+	console.warn('请求用户信息接口地址=>'+apiUrl)
+
+	let newapi = "";
+
+	// 创建一个AbortController对象，用于控制fetch请求的取消
+	const controller = new AbortController();
+
+	const timeout = setTimeout(() => {
+		controller.abort(); // 取消所有请求
+		return newapi;
+	}, 10000); // 2秒后触发
+
+	try {
+		// 使用Promise.allSettled等待所有API请求完成，无论成功或失败
+		// 对api数组进行遍历，对每个API地址发起fetch请求
+		const response = await fetch(apiUrl, {
+			method: 'get',
+			signal: controller.signal // 将AbortController的信号量添加到fetch请求中，以便于需要时可以取消请求
+		});
+
+		// 获取响应的内容
+		let text = await response.text()
+		console.warn('响应返回信息=>'+text)
+		let json = JSON.parse(text)
+
+		newapi = `${hostName}${`${json.remarks}` ? `#${json.remarks}` : '官方优选'}\n`;
+	} catch (error) {
+		console.error(error);
+	} finally {
+		// 无论成功或失败，最后都清除设置的超时定时器
+		clearTimeout(timeout);
+	}
+	console.warn('函数返回信息=>'+newapi)
+
+	// 返回处理后的结果
+	return newapi;
 }
 
 async function 整理测速结果(tls) {
@@ -417,7 +460,7 @@ async function getLink(重新汇总所有链接) {
 				method: 'get',
 				headers: {
 					'Accept': 'text/html,application/xhtml+xml,application/xml;',
-					'User-Agent': `v2rayN/${FileName + ' cmliu/EdgeOne-Pages-BestIP2SUB'}` // 设置User-Agent头，标识请求来源
+					'User-Agent': `v2rayN/${encodeURIComponent(FileName) + ' cmliu/EdgeOne-Pages-BestIP2SUB'}` // 设置User-Agent头，标识请求来源
 				},
 				signal: controller.signal // 将AbortController的信号量添加到fetch请求中
 			}).then(response => response.ok ? response.text() : Promise.reject())));
@@ -496,6 +539,8 @@ export async function onRequest(context) {
 	const url = new URL(request.url);
 	const format = url.searchParams.get('format') ? url.searchParams.get('format').toLowerCase() : "null";
 	let host = "";
+	let hostName = env.USERINFOURL ? env.USERINFOURL : userInfoUrl;
+	let subscription = "";
 	let uuid = "";
 	let path = "";
 	let sni = "";
@@ -618,6 +663,7 @@ export async function onRequest(context) {
 		await sendMessage(`#获取订阅 ${FileName}`, getClientIP(request), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 	} else {
 		host = url.searchParams.get('host');
+		subscription = url.searchParams.get('subscription');
 		uuid = url.searchParams.get('uuid') || url.searchParams.get('password') || url.searchParams.get('pw');
 		path = url.searchParams.get('path');
 		sni = url.searchParams.get('sni') || host;
@@ -729,19 +775,20 @@ export async function onRequest(context) {
 			临时中转域名 = [...new Set(临时中转域名)];
 		}
 
-		const newAddressesapi = await 整理优选列表(addressesapi);
+		const newAddressesapi = await 整理优选列表(addressesapi, hostName, subscription);
 		const newAddressescsv = await 整理测速结果('TRUE');
 		const uniqueAddresses = Array.from(new Set(addresses.concat(newAddressesapi, newAddressescsv).filter(item => item && item.trim())));
 
 		let notlsresponseBody;
 		if ((noTLS == 'true' && 协议类型 == atob(`\u0056\u006b\u0078\u0046\u0055\u0031\u004d\u003d`)) || 协议类型 == 'VMess') {
-			const newAddressesnotlsapi = await 整理优选列表(addressesnotlsapi);
+			const newAddressesnotlsapi = await 整理优选列表(addressesnotlsapi, hostName, subscription);
 			const newAddressesnotlscsv = await 整理测速结果('FALSE');
 			const uniqueAddressesnotls = Array.from(new Set(addressesnotls.concat(newAddressesnotlsapi, newAddressesnotlscsv).filter(item => item && item.trim())));
 
 			notlsresponseBody = uniqueAddressesnotls.map(address => {
 				let port = "-1";
 				let addressid = address;
+				let Host = host;
 
 				const match = addressid.match(regex);
 				if (!match) {
@@ -751,6 +798,9 @@ export async function onRequest(context) {
 						const subParts = parts[1].split('#');
 						port = subParts[0];
 						addressid = subParts[1];
+						if (subParts.length > 2){
+							Host = subParts[2] || host;
+						}
 					} else if (address.includes(':')) {
 						const parts = address.split(':');
 						address = parts[0];
@@ -768,6 +818,7 @@ export async function onRequest(context) {
 					address = match[1];
 					port = match[2] || port;
 					addressid = match[3] || address;
+					Host = match[4] || host;
 				}
 
 				const httpPorts = ["8080", "8880", "2052", "2082", "2086", "2095"];
@@ -815,10 +866,10 @@ export async function onRequest(context) {
 				}
 
 				if (协议类型 == 'VMess') {
-					const vmessLink = `vmess://${utf8ToBase64(`{"v":"2","ps":"${addressid + EndPS}","add":"${address}","port":"${port}","id":"${uuid}","aid":"${额外ID}","scy":"${加密方式}","net":"ws","type":"${type}","host":"${host}","path":"${path}","tls":"","sni":"","alpn":"${encodeURIComponent(alpn)}","fp":""}`)}`;
+					const vmessLink = `vmess://${utf8ToBase64(`{"v":"2","ps":"${addressid + EndPS}","add":"${address}","port":"${port}","id":"${uuid}","aid":"${额外ID}","scy":"${加密方式}","net":"ws","type":"${type}","host":"${Host}","path":"${path}","tls":"","sni":"","alpn":"${encodeURIComponent(alpn)}","fp":""}`)}`;
 					return vmessLink;
 				} else {
-					const 为烈士Link = `vless://${uuid}@${address}:${port}?encryption=none&security=&type=${type}&host=${host}&path=${encodeURIComponent(path)}#${encodeURIComponent(addressid + EndPS)}`;
+					const 为烈士Link = `vless://${uuid}@${address}:${port}?encryption=none&security=&type=${type}&host=${Host}&path=${encodeURIComponent(path)}#${encodeURIComponent(addressid + EndPS)}`;
 					return 为烈士Link;
 				}
 
