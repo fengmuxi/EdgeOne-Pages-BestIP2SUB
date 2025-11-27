@@ -66,7 +66,7 @@ async function 整理优选列表(api, hostName, subscription) {
 			method: 'get',
 			headers: {
 				'Accept': 'text/html,application/xhtml+xml,application/xml;',
-				'User-Agent': encodeURIComponent(FileName) + ' cmliu/EdgeOne-Pages-BestIP2SUB' // 设置User-Agent头，标识请求来源
+				'User-Agent': 'fengmuxi/EdgeOne-Pages-BestIP2SUB' // 设置User-Agent头，标识请求来源
 			},
 			signal: controller.signal // 将AbortController的信号量添加到fetch请求中，以便于需要时可以取消请求
 		}).then(response => response.ok ? response.text() : Promise.reject())));
@@ -460,7 +460,7 @@ async function getLink(重新汇总所有链接) {
 				method: 'get',
 				headers: {
 					'Accept': 'text/html,application/xhtml+xml,application/xml;',
-					'User-Agent': `v2rayN/${encodeURIComponent(FileName) + ' cmliu/EdgeOne-Pages-BestIP2SUB'}` // 设置User-Agent头，标识请求来源
+					'User-Agent': 'fengmuxi/EdgeOne-Pages-BestIP2SUB' // 设置User-Agent头，标识请求来源
 				},
 				signal: controller.signal // 将AbortController的信号量添加到fetch请求中
 			}).then(response => response.ok ? response.text() : Promise.reject())));
@@ -1028,7 +1028,7 @@ export async function onRequest(context) {
 	}
 
 	try {
-		const subConverterResponse = await fetch(subConverterUrl, { headers: { 'User-Agent': `v2rayN/${encodeURIComponent(FileName)} (https://github.com/cmliu/EdgeOne-Pages-BestIP2SUB)` } });
+		const subConverterResponse = await fetch(subConverterUrl, { headers: { 'User-Agent': 'fengmuxi/EdgeOne-Pages-BestIP2SUB' } });
 
 		if (!subConverterResponse.ok) {
 			throw new Error(`Error fetching subConverterUrl: ${subConverterResponse.status} ${subConverterResponse.statusText}`);
