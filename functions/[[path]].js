@@ -741,6 +741,7 @@ export async function onRequest(context) {
 		return await subHtml(request);
 	} else if ((userAgent.includes('clash') || userAgent.includes('meta') || userAgent.includes('mihomo') || (format === 'clash' && !isSubConverterRequest)) && !userAgent.includes('nekobox') && !userAgent.includes('cf-workers-sub')) {
 		subConverterUrl = `${subProtocol}://${subConverter}/sub?target=clash&url=${encodeURIComponent(subConverterUrl)}&insert=false&config=${encodeURIComponent(subConfig)}&emoji=true&list=false&tfo=false&scv=${scv}&fdn=false&sort=false&new_name=true`;
+		// console.log(subConverterUrl)
 	} else if ((userAgent.includes('sing-box') || userAgent.includes('singbox') || (format === 'singbox' && !isSubConverterRequest)) && !userAgent.includes('cf-workers-sub')) {
 		if (协议类型 == 'VMess' && url.href.includes('path=')) {
 			const 路径参数前部分 = url.href.split('path=')[0];
@@ -1027,7 +1028,7 @@ export async function onRequest(context) {
 	}
 
 	try {
-		const subConverterResponse = await fetch(subConverterUrl, { headers: { 'User-Agent': `v2rayN/${FileName} (https://github.com/cmliu/EdgeOne-Pages-BestIP2SUB)` } });
+		const subConverterResponse = await fetch(subConverterUrl, { headers: { 'User-Agent': `v2rayN/${encodeURIComponent(FileName)} (https://github.com/cmliu/EdgeOne-Pages-BestIP2SUB)` } });
 
 		if (!subConverterResponse.ok) {
 			throw new Error(`Error fetching subConverterUrl: ${subConverterResponse.status} ${subConverterResponse.statusText}`);
