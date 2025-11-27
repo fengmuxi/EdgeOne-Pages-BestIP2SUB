@@ -126,7 +126,7 @@ async function 整理优选列表(api, hostName, subscription) {
 	}
 
 	const userInfo = await 获取用户信息(hostName, subscription);
-	const newAddressesapi = await 整理((userInfo + newapi);
+	const newAddressesapi = await 整理(userInfo + newapi);
 
 	// 返回处理后的结果
 	return newAddressesapi;
